@@ -1,0 +1,48 @@
+package config
+
+import (
+	"log"
+	"os"
+	"strconv"
+
+	"github.com/joho/godotenv"
+)
+
+type Config struct {
+	Port string
+	DatabaseURL string
+	RedisURL string
+	JWTSecret string
+	JWTExpiryHours int
+}
+
+func Load() *Config {
+	if err := godotenv.Load(); err != nil {
+		log.Println("no .env file, using environment variables")
+	}
+
+	hours, _ := strconv.Atoi(getEnv("JWT_EXPIRY_HOURS", "24"))
+
+	return &Config{
+		Port: getEnv("PORT", "8080"),
+		DatabaseURL: mustGetEnv("DATABASE_URL"),
+		RedisURL: getEnv("REDIS_URL", "redis://localhost:6379"),
+		JWTSecret: mustGetEnv("JWT_SECRET"),
+		JWTExpiryHours: hours,
+	}
+}
+
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
+func mustGetEnv(key string) string {
+	v := os.Getenv(key)
+	if v == "" {
+		log.Fatalf("required env var %s is not set", key)
+	}
+	return v
+}
