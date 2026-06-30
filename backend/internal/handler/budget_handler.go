@@ -19,9 +19,9 @@ func NewBudgetHandler(budgetSvc *service.BudgetService) *BudgetHandler {
 }
 
 type upsertBudgetRequest struct {
-	Category	string	`json:"category"`
-	LimitAmount	float64	`json:"limit_amount"`
-	Month		string	`json:"month"` // "2026-01"
+	Category    string  `json:"category"`
+	LimitAmount float64 `json:"limit_amount"`
+	Month       string  `json:"month"` // "2026-01"
 }
 
 func (h *BudgetHandler) Upsert(c echo.Context) error {
@@ -37,17 +37,26 @@ func (h *BudgetHandler) Upsert(c echo.Context) error {
 
 	month := time.Now()
 	if req.Month != "" {
-		month, err = time.Parse("2026-01", req.Month)
+		// Go's reference layout is always "2006-01-02 15:04:05" — the
+		// numbers are fixed magic values, not a description of this
+		// field's format. Using "2026-01" here would silently fail to
+		// parse anything (or parse garbage), it's not "this year" plus
+		// month. The correct layout token for YYYY-MM is "2006-01".
+		month, err = time.Parse("2006-01", req.Month)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "month format: 2006-01"})
 		}
 	}
 
+	if req.Category == "" || req.LimitAmount <= 0 {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "category and limit_amount > 0 required"})
+	}
+
 	budget := &domain.Budget{
-		UserID:		userID,
-		Category:	req.Category,
-		LimitAmount:	req.LimitAmount,
-		Month:		month,
+		UserID:      userID,
+		Category:    req.Category,
+		LimitAmount: req.LimitAmount,
+		Month:       month,
 	}
 
 	created, err := h.budgetSvc.Upsert(c.Request().Context(), budget)
@@ -60,7 +69,10 @@ func (h *BudgetHandler) Upsert(c echo.Context) error {
 func (h *BudgetHandler) GetStatus(c echo.Context) error {
 	userID, err := middleware.RequireAuth(c)
 	if err != nil {
-		return nil
+		// Bug fixed: this used to `return nil`, which discards the 401
+		// RequireAuth already wrote and lets Echo continue as if nothing
+		// went wrong (sending a second, empty 200 response on top of it).
+		return err
 	}
 
 	monthStr := c.QueryParam("month")
@@ -81,4 +93,3 @@ func (h *BudgetHandler) GetStatus(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, statuses)
 }
-

@@ -9,11 +9,11 @@ import (
 )
 
 type BudgetService struct {
-	budgetRepo	*repository.BudgetRepo
-	txRepo	*repository.TransactionRepo
+	budgetRepo repository.BudgetStore
+	txRepo     repository.TransactionStore
 }
 
-func NewBudgetService(budgetRepo *repository.BudgetRepo, txRepo *repository.TransactionRepo) *BudgetService {
+func NewBudgetService(budgetRepo repository.BudgetStore, txRepo repository.TransactionStore) *BudgetService {
 	return &BudgetService{budgetRepo: budgetRepo, txRepo: txRepo}
 }
 
@@ -44,12 +44,11 @@ func (s *BudgetService) GetStatus(ctx context.Context, userID string, month time
 			pct = (spent / b.LimitAmount) * 100
 		}
 		statuses = append(statuses, &domain.BudgetStatus{
-			Budget: *b,
-			Spent: spent,
-			Remaining: remaining,
+			Budget:     *b,
+			Spent:      spent,
+			Remaining:  remaining,
 			Percentage: pct,
 		})
 	}
 	return statuses, nil
 }
-

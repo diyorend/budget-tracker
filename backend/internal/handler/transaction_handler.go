@@ -5,25 +5,25 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labstack/echo/v4"
 	"github.com/diyorend/budget-tracker/internal/domain"
 	"github.com/diyorend/budget-tracker/internal/middleware"
 	"github.com/diyorend/budget-tracker/internal/service"
+	"github.com/labstack/echo/v4"
 )
 
 type TransactionHandler struct {
 	txSvc *service.TransactionService
 }
 
-func NewTransactioinHandler(txSvc *service.TransactionService) *TransactionHandler {
+func NewTransactionHandler(txSvc *service.TransactionService) *TransactionHandler {
 	return &TransactionHandler{txSvc: txSvc}
 }
 
 type createTransactionRequest struct {
-	Amount	float64	`json:"amount"`
-	Category	string	`json:"category"`
-	Description	string	`json:"description"`
-	Date	string	`json:"date"` // "2026-01-15"
+	Amount      float64 `json:"amount"`
+	Category    string  `json:"category"`
+	Description string  `json:"description"`
+	Date        string  `json:"date"` // "2026-01-15"
 }
 
 func (h *TransactionHandler) Create(c echo.Context) error {
@@ -50,11 +50,11 @@ func (h *TransactionHandler) Create(c echo.Context) error {
 	}
 
 	tx := &domain.Transaction{
-		UserID:		userID,
-		Amount:		req.Amount,
-		Category:	req.Category,
-		Description:	req.Description,
-		Date:		date,
+		UserID:      userID,
+		Amount:      req.Amount,
+		Category:    req.Category,
+		Description: req.Description,
+		Date:        date,
 	}
 
 	created, err := h.txSvc.Create(c.Request().Context(), tx)
@@ -65,7 +65,7 @@ func (h *TransactionHandler) Create(c echo.Context) error {
 	return c.JSON(http.StatusCreated, created)
 }
 
-func (h *TransactionHandler) List(c  echo.Context) error {
+func (h *TransactionHandler) List(c echo.Context) error {
 	userID, err := middleware.RequireAuth(c)
 	if err != nil {
 		return err
@@ -86,6 +86,3 @@ func (h *TransactionHandler) List(c  echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, txs)
 }
-
-
-

@@ -62,6 +62,8 @@ func main() {
 	slog.Info("redis connected")
 
 	// --- Repositories ---
+	// Concrete types here; everything downstream (services) accepts the
+	// repository.XStore interfaces, so these just happen to satisfy them.
 	userRepo := repository.NewUserRepo(dbpool)
 	txRepo := repository.NewTransactionRepo(dbpool)
 	budgetRepo := repository.NewBudgetRepo(dbpool)
@@ -76,24 +78,24 @@ func main() {
 
 	// --- Handlers ---
 	authHandler := handler.NewAuthHandler(authSvc)
-	txHandler := handler.NewTransactioinHandler(txSvc)
+	txHandler := handler.NewTransactionHandler(txSvc)
 	budgetHandler := handler.NewBudgetHandler(budgetSvc)
 	wsHandler := handler.NewWSHandler(broker)
 
 	// --- Echo router ---
 	e := echo.New()
 	e.HideBanner = true
-	
+
 	// Global middleware
 	e.Use(echomiddleware.Logger())
 	e.Use(echomiddleware.Recover())
 	e.Use(echomiddleware.CORSWithConfig(echomiddleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:5173", "http://localhost:3000"},
+		AllowOrigins: []string{"http://localhost:5173", "http://localhost:3000", "http://localhost"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAuthorization},
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 	}))
 
-	// Heath check (no auth - used by docker healthcheck)
+	// Health check (no auth — used by Docker healthcheck)
 	e.GET("/health", func(c echo.Context) error {
 		if err := dbpool.Ping(c.Request().Context()); err != nil {
 			return c.JSON(http.StatusServiceUnavailable, map[string]string{"status": "db_down"})
@@ -112,7 +114,7 @@ func main() {
 	api.POST("/budgets", budgetHandler.Upsert)
 	api.GET("/budgets/status", budgetHandler.GetStatus)
 
-	// WebSocket (JWT via query param)
+	// WebSocket — JWT middleware now also accepts ?token=, see internal/middleware/jwt.go
 	e.GET("/ws", wsHandler.Connect, middleware.JWT(authSvc))
 
 	// --- Start broker in background ---
@@ -120,7 +122,7 @@ func main() {
 	defer brokerCancel()
 	go broker.Run(brokerCtx)
 
-	// --- Start SERVER ---
+	// --- Start server ---
 	go func() {
 		slog.Info("server starting", "port", cfg.Port)
 		if err := e.Start(":" + cfg.Port); err != nil && err != http.ErrServerClosed {
@@ -144,4 +146,3 @@ func main() {
 	}
 	slog.Info("server stopped")
 }
-	

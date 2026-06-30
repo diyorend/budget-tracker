@@ -1,5 +1,12 @@
-# Multi-stage build — the pattern the job listing asked for
-FROM golang:1.22-alpine AS builder
+# Multi-stage build.
+#
+# IMPORTANT: the builder image's Go version must be >= the "go" directive in
+# go.mod (currently 1.26.4). If they mismatch, `go mod download` tries to
+# silently fetch the right toolchain from proxy.golang.org at build time —
+# and in most sandboxed/offline Docker build environments that download is
+# blocked, which is exactly what produced the original build failure:
+#   "go mod download" did not complete successfully: exit code: 1
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
 COPY go.mod go.sum ./

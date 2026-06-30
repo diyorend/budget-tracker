@@ -5,29 +5,30 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
 	"github.com/diyorend/budget-tracker/internal/domain"
 	"github.com/diyorend/budget-tracker/internal/repository"
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	userRepo *repository.UserRepo
+	// Interface — not *repository.UserRepo. Lets tests pass a mock.
+	userStore repository.UserStore
 	jwtSecret string
-	expiry time.Duration
+	expiry    time.Duration
 }
 
-func NewAuthService(repo *repository.UserRepo, secret string, expiryHours int) *AuthService {
+func NewAuthService(store repository.UserStore, secret string, expiryHours int) *AuthService {
 	return &AuthService{
-		userRepo: repo,
+		userStore: store,
 		jwtSecret: secret,
-		expiry: time.Duration(expiryHours) * time.Hour,
+		expiry:    time.Duration(expiryHours) * time.Hour,
 	}
 }
 
 type Claims struct {
-	UserID	string	`json:"user_id"`
-	Email	string	`json:"email"`
+	UserID string `json:"user_id"`
+	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
 
@@ -36,19 +37,20 @@ func (s *AuthService) Register(ctx context.Context, email, password string) (*do
 	if err != nil {
 		return nil, fmt.Errorf("AuthService.Register hash: %w", err)
 	}
-	return s.userRepo.Create(ctx, email, string(hash))
+	return s.userStore.Create(ctx, email, string(hash))
 }
 
 func (s *AuthService) Login(ctx context.Context, email, password string) (string, *domain.User, error) {
-	user, err := s.userRepo.GetByEmail(ctx, email)
+	user, err := s.userStore.GetByEmail(ctx, email)
 	if err != nil {
+		// Don't leak whether the email exists or not
 		return "", nil, fmt.Errorf("%w", domain.ErrUnauthorized)
 	}
-	
+
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return "", nil, fmt.Errorf("%w", domain.ErrUnauthorized)
 	}
-	
+
 	token, err := s.generateToken(user)
 	if err != nil {
 		return "", nil, err
@@ -59,10 +61,10 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 func (s *AuthService) generateToken(user *domain.User) (string, error) {
 	claims := Claims{
 		UserID: user.ID,
-		Email: user.Email,
+		Email:  user.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.expiry)),
-			IssuedAt: jwt.NewNumericDate(time.Now()),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -85,4 +87,3 @@ func (s *AuthService) ValidateToken(tokenStr string) (*Claims, error) {
 	}
 	return claims, nil
 }
-
