@@ -32,7 +32,7 @@ export function SpendingChart({ budgets }: Props) {
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis />
-          <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+          <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
           <Bar dataKey="limit" fill="#e5e7eb" name="Budget" />
           <Bar dataKey="spent" name="Spent">
             {data.map((entry, index) => (
