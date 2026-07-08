@@ -80,7 +80,7 @@ func main() {
 	authHandler := handler.NewAuthHandler(authSvc)
 	txHandler := handler.NewTransactionHandler(txSvc)
 	budgetHandler := handler.NewBudgetHandler(budgetSvc)
-	wsHandler := handler.NewWSHandler(broker)
+	wsHandler := handler.NewWSHandler(broker, budgetSvc)
 
 	// --- Echo router ---
 	e := echo.New()

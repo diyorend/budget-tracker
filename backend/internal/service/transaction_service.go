@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"time"
 
@@ -79,29 +78,7 @@ func (s *TransactionService) checkBudgets(ctx context.Context, userID, category 
 
 	percentage := (spent / budget.LimitAmount) * 100
 
-	var alertMsg *domain.AlertMessage
-	switch {
-	case percentage >= 100:
-		alertMsg = &domain.AlertMessage{
-			Type:       "budget_alert",
-			Category:   category,
-			Spent:      spent,
-			Limit:      budget.LimitAmount,
-			Percentage: percentage,
-			Message:    fmt.Sprintf("You have exceeded your %s budget! Spent %.2f of %.2f", category, spent, budget.LimitAmount),
-		}
-	case percentage >= 80:
-		alertMsg = &domain.AlertMessage{
-			Type:       "budget_alert",
-			Category:   category,
-			Spent:      spent,
-			Limit:      budget.LimitAmount,
-			Percentage: percentage,
-			Message:    fmt.Sprintf("You have used %.0f%% of your %s budget", percentage, category),
-		}
-	}
-
-	if alertMsg != nil {
+	if alertMsg := domain.NewBudgetAlert(category, spent, budget.LimitAmount, percentage); alertMsg != nil {
 		return s.broker.Publish(ctx, userID, *alertMsg)
 	}
 	return nil
