@@ -1,5 +1,7 @@
 # Budget Tracker
 
+budget.diyorend.com
+
 A personal finance tracker with real-time budget alerts. Set a monthly spending limit per category, log transactions, and get an instant WebSocket notification the moment you cross 80% or 100% of a budget — pushed the second it happens, not on page refresh.
 
 Built to practice production-style backend patterns in Go: concurrent WebSocket fan-out, Redis pub/sub, interface-driven architecture for testability, and clean separation between transport, business logic, and data access.
@@ -133,6 +135,8 @@ go test ./...
 Tests use the repository/service interfaces with in-memory mocks — no live Postgres or Redis required. Coverage includes budget percentage calculation, the full `TransactionService.Create` flow (including the asynchronous budget-threshold check and Redis publish), and the auth handler's register/login flows (validation, duplicate-email conflict, wrong-password rejection).
 
 ## Known Limitations
+
+This runs on my personal laptop. If I close the lid or it loses power, the site goes down. For a real production deployment I'd use a VPS or dedicated server. But for demonstrating I can build and deploy a full stack Go application with WebSockets, Docker, and a real domain, this works perfectly.
 
 This is a portfolio project, not a production system. Things deliberately left out, with the reasoning for each:
 
