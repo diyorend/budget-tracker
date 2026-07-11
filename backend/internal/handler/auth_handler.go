@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
 	"github.com/diyorend/budget-tracker/internal/domain"
 	"github.com/diyorend/budget-tracker/internal/service"
+	"github.com/labstack/echo/v4"
 )
 
 type AuthHandler struct {
@@ -18,8 +18,8 @@ func NewAuthHandler(authSvc *service.AuthService) *AuthHandler {
 }
 
 type registerRequest struct {
-	Email	string	`json:"email"`
-	Password	string	`json:"password"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func (h *AuthHandler) Register(c echo.Context) error {
@@ -32,14 +32,17 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "email required, password min 8 chars"})
 	}
 
-	user, err := h.authSvc.Register(c.Request().Context(), req.Email, req.Password)
+	token, user, err := h.authSvc.Register(c.Request().Context(), req.Email, req.Password)
 	if err != nil {
 		if errors.Is(err, domain.ErrAlreadyExists) {
 			return c.JSON(http.StatusConflict, map[string]string{"error": "email already registered"})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "registration failed"})
 	}
-	return c.JSON(http.StatusCreated, user)
+	return c.JSON(http.StatusCreated, map[string]any{
+		"token": token,
+		"user":  user,
+	})
 
 }
 
@@ -58,7 +61,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]any{
-		"token":	token,
-		"user":	user,
+		"token": token,
+		"user":  user,
 	})
 }

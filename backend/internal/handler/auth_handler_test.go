@@ -76,6 +76,16 @@ func TestRegister(t *testing.T) {
 			if rec.Code != tt.wantStatus {
 				t.Errorf("status = %d, want %d (body: %s)", rec.Code, tt.wantStatus, rec.Body.String())
 			}
+
+			if tt.wantStatus == http.StatusCreated {
+				var resp map[string]any
+				if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+					t.Fatalf("failed to unmarshal response: %v", err)
+				}
+				if resp["token"] == nil || resp["token"] == "" {
+					t.Error("expected non-empty token in register response so the client can auto-login")
+				}
+			}
 		})
 	}
 }
