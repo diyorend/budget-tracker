@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
+import "./App.css";
 import { login, register } from "./api/auth";
 import {
   getTransactions,
@@ -82,14 +83,7 @@ export default function App() {
 
   if (!token) {
     return (
-      <div
-        style={{
-          maxWidth: 400,
-          margin: "80px auto",
-          padding: 24,
-          fontFamily: "system-ui",
-        }}
-      >
+      <div className="login-shell">
         <Toaster />
         <h1 style={{ marginBottom: 24 }}>Budget Tracker</h1>
         <input
@@ -135,23 +129,9 @@ export default function App() {
   ];
 
   return (
-    <div
-      style={{
-        maxWidth: 900,
-        margin: "0 auto",
-        padding: 24,
-        fontFamily: "system-ui",
-      }}
-    >
+    <div className="app-shell">
       <Toaster position="top-right" />
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 32,
-        }}
-      >
+      <div className="header-row">
         <h1>Budget Tracker</h1>
         <button
           onClick={() => {
@@ -164,14 +144,7 @@ export default function App() {
         </button>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 24,
-          marginBottom: 32,
-        }}
-      >
+      <div className="form-grid">
         {/* Add Transaction */}
         <div style={cardStyle}>
           <h2 style={{ marginTop: 0 }}>Add Transaction</h2>
@@ -237,14 +210,7 @@ export default function App() {
 
       {/* Budget Status Cards */}
       {budgets.length > 0 && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 16,
-            margin: "24px 0",
-          }}
-        >
+        <div className="budget-grid">
           {budgets.map((b) => (
             <div
               key={b.id}
@@ -295,15 +261,7 @@ export default function App() {
           <p style={{ color: "#9ca3af" }}>No transactions yet</p>
         )}
         {transactions.map((t) => (
-          <div
-            key={t.id}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              padding: "12px 0",
-              borderBottom: "1px solid #f3f4f6",
-            }}
-          >
+          <div key={t.id} className="tx-row">
             <div>
               <strong>{t.category}</strong>
               {t.description && (
